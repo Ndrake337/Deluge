@@ -1,0 +1,85 @@
+/*
+
+    F039 - Integração com RD Station
+
+*/
+
+
+//O trecho de código abaixo deve ser rodado uma unica vez para geração do AuthToken e do Refresh token, Após a primeira execução pode seguir com o código convencional
+/*
+
+    //Json de Parametros para a primeira requisição de token, nele você deve passar o código obtido na URL e as informações do app do RD Station 
+    //Caso não saiba do que eu estou falando acesse o link do Post no Connect (),explicando a primeira parte do processo
+    param1 = {"client_id": "572dec5a-11c5-4c88-aa82-dc2b84b8a0fc","client_secret": "82f0dcd5655a43bc92d7509fded71f6e","code": code};
+
+    //chamando a URL que retornará o AuthToken, refresh token e Duração do mesmo
+    tokens = invokeurl
+    [
+        url :"https://api.rd.services/auth/token"
+        type : POST
+        parameters: param1
+    ];
+
+    info tokens;
+
+*/
+
+//Após executar o trecho acima copie o Refresh token e em seguida comente ou remova o código para evitar chamadas desncessárias de api
+
+
+//Variavel refreshToken que deverá conter o token copiado por você
+refreshToken = "vsn4XmS3IwCMrk1qFRim6Hyae50LVWkpRgJsEUkOMPs";
+
+//Json Params, para chamada de um AcessToken, está função irá solicitar o acesstoken toda vez que rodar, tokens são gerados automaticamente após 24 horas, mas não se preocupe
+Params = {
+  "client_id": "572dec5a-11c5-4c88-aa82-dc2b84b8a0fc",
+  "client_secret": "82f0dcd5655a43bc92d7509fded71f6e",
+  "refresh_token": refreshToken
+};
+
+//Variavel newtoken para chamada da api que irá retornar o AcessToken atual.
+newtoken = invokeurl
+[
+	url: "https://api.rd.services/auth/token"
+	type: POST
+	parameters: Params
+];
+info newtoken ;
+
+//Variavel accessToken que irá pegar do JSON retornado pela newtoken e armazenando na variavel
+accessToken = newtoken.get("access_token");
+
+//JSON header responsavel por autenteicar a chamada com o uso do token 
+header = {"Authorization":accessToken};
+
+//Exemplo de utilização de API GET DO RD Station
+pegaContatos = invokeurl
+[
+	url: "https://api.rd.services/platform/contacts/email:{INSIRA O EMAIL DO REGISTRO QUE QUER BUSCAR}}"
+	type: GET
+	headers: header
+];
+//Printando Retorno do JSON
+info pegaContatos ;
+
+//Exemplo de utilização de API PATCH DO RD Station para atualizar registros no RD Station
+
+
+//Obtendo uuid nescessário para atualização do registro
+uuid = pegaContatos.get("uuid");
+
+//Passagem do Parametro na variavel Param1 informando o que deve ser atualizado no getistro
+param1 = {"job_title":"vagabundo"};
+
+//Passagem da variavel header para passagem do token para autenticação e Parametro Extra Content-Type para informar que o formado do payload é um JSON  
+header = {"Authorization":accessToken, "Content-Type":"application/json"};
+
+//passagem do invoke URL com o metodo PATCH para atualizar o registro
+AtualizaContato = invokeurl
+[
+	url: "https://api.rd.services/platform/contacts/"+uuid
+	type: PATCH
+	headers: header
+	parameters: "{\"job_title\":\"vagabundo\"}"
+];
+info AtualizaContato;

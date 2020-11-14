@@ -1,0 +1,120 @@
+Details = zoho.crm.getRecordById("Sales_Orders",id);
+OrgId = ;
+OrgId = OrgId.toString();
+NomeConta = Details.get("Account_Name").get("name");
+NomeContato = Details.get("Contact_Name").get("name");
+Produtos = Details.get("Product_Details");
+DataFatura = Details.get("Modified_Time").getDate();
+DataVencimentoParcela = Details.get("Data_de_Vencimento_da_1_Parcela");
+formaPagamento = Details.get("Forma_de_Pagamento");
+//Json Search Param usado para localizar a conta com nome igual no CRM e no Books
+searchParam = {"contact_name":NomeConta};
+ListContacts = zoho.books.getRecords("contacts",OrgId,searchParam,"zohobooks");
+ListContacts = ListContacts.get("contacts");
+qtdParcelas = Details.get("Quantidade_de_Parcelas").toNumber();
+info ListContacts;
+idContato = ListContacts.getJSON("contact_id");
+idContrato = Details.get("N_mero_do_Contrato_de_Venda");
+total = Details.get("Grand_Total");
+disc = Details.get("Discount").toNumber();
+//Cálculo do percentual de desconto aplicado
+x1 = total + disc;
+DiscTotal = (disc * 100) / x1;
+DiscTotal = DiscTotal.toDecimal().toString();
+DiscTotal = DiscTotal + "%";
+info "DiscTotal: " + DiscTotal;
+disc = disc / qtdParcelas;
+info "Desconto: " + disc;
+info "GranTotal: " + total;
+qtdParcelas = qtdParcelas.toString();
+//Procedimento para input dos campos personalizados no zoho books, varia de sistema em sistema
+cf = list();
+cf.add({"customfield_id":"206886000000171001","show_in_store":false,"show_in_portal":false,"is_active":true,"index":1,"label":"Nome do Contato","show_on_pdf":true,"edit_on_portal":false,"edit_on_store":false,"show_in_all_pdf":true,"value_formatted":NomeContato,"data_type":"string","placeholder":"cf_206886000000171001","value":NomeContato});
+cf.add({"customfield_id":"206886000000171003","show_in_store":false,"show_in_portal":false,"is_active":true,"index":2,"label":"Quantidade de Parcelas","show_on_pdf":true,"edit_on_portal":false,"edit_on_store":false,"show_in_all_pdf":true,"value_formatted":qtdParcelas,"data_type":"number","placeholder":"cf_206886000000171003","value":qtdParcelas});
+cf.add({"customfield_id":"206886000000171005","show_in_store":false,"show_in_portal":false,"is_active":true,"index":3,"label":"Forma de pagamento","show_on_pdf":true,"edit_on_portal":false,"edit_on_store":false,"show_in_all_pdf":true,"value_formatted":formaPagamento,"data_type":"dropdown","placeholder":"cf_206886000000171005","value":formaPagamento});
+qtdParcelas = qtdParcelas.toNumber();
+price = total / qtdParcelas;
+listaProd = list();
+mp = Map();
+//Populando a lista de produtos 
+for each  p in Produtos
+{
+	name = p.get("product").get("name");
+	qtd = p.get("quantity");
+	desc = p.get("product_description");
+	unit = p.get("unit_price");
+	total2 = p.get("total_after_discount");
+	price2 = total2 / qtdParcelas;
+	listaProd.add({"name":name,"quantity":qtd,"description":desc,"item_total":total2,"bcy_rate":total2,"unit":unit,"rate":price2});
+}
+info qtdParcelas;
+//obtendo numero de parcelas a ser criada no books
+Parcelas = {1,2,3,4,5,6,7,8,9,10,11,12};
+listaAux = list();
+if(qtdParcelas > 1)
+{
+	for each  valor in Parcelas
+	{
+		if(valor > qtdParcelas)
+		{
+			listaAux.add(valor);
+		}
+	}
+	Parcelas.removeAll(listaAux);
+	info Parcelas;
+}
+//criação das faturas para varias parcelas
+if(qtdParcelas > 1)
+{
+	for each  f in Parcelas
+	{
+		mp.put("payment_terms_label","Personalizar");
+		mp.put("custom_fields",cf);
+		mp.put("line_items",listaProd.toJsonList());
+		mp.put("customer_id",idContato);
+		mp.put("discount_amount",disc);
+		mp.put("discount",DiscTotal);
+		mp.put("discount_applied_on_amount",total);
+		mp.put("is_discount_before_tax",true);
+		mp.put("discount_type","entity_level");
+		mp.put("salesperson_id","9");
+		mp.put("created_by_id","");
+		mp.put("reference_number",idContrato);
+		if(f == 1)
+		{
+			mp.put("due_date",DataVencimentoParcela);
+			CriaParcelas = zoho.books.createRecord("invoices",OrgId,mp,"zohobooks");
+			info mp;
+			info CriaParcelas;
+			mp.clear();
+		}
+		else if(f > 1)
+		{
+			mp.put("due_date",DataVencimentoParcela.addMonth(f - 1));
+			CriaParcelas = zoho.books.createRecord("invoices",OrgId,mp,"zohobooks");
+			info mp;
+			info CriaParcelas;
+			mp.clear();
+		}
+	}
+}
+//criação de fatura para uma unica parcela
+else if(qtdParcelas == 1)
+{
+	mp.put("payment_terms_label","Personalizar");
+	mp.put("custom_fields",cf);
+	mp.put("line_items",listaProd.toJsonList());
+	mp.put("customer_id",idContato);
+	mp.put("discount_amount",disc);
+	mp.put("discount",DiscTotal);
+	mp.put("discount_applied_on_amount",total);
+	mp.put("is_discount_before_tax",true);
+	mp.put("discount_type","entity_level");
+	mp.put("salesperson_id","");
+	mp.put("created_by_id","");
+	mp.put("reference_number",idContrato);
+	mp.put("due_date",DataVencimentoParcela);
+	CriaParcelas = zoho.books.createRecord("invoices",OrgId,mp,"zohobooks");
+	info mp;
+	info CriaParcelas;
+}

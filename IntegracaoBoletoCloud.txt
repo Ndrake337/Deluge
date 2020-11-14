@@ -1,0 +1,60 @@
+/*
+
+	Criação de Boletos usando Boleto.Cloud
+
+*/
+token = "api-key_RS1QuD46wY0HCdjv0ULobglUaQm-b7hv2pUOW6Xili0="; //token de api fixo obtido no Boleto.cloud
+url = "https://sandbox.boletocloud.com/api/v1/boletos"; //URL para chamada da API Rest para criar boleto *URL DE SANBOX, APÓS TESTE UTILIZAR URL: https://app.boletocloud.com/api/v1/boletos*
+
+//Parametros disponiveis
+params = {
+		"boleto.conta.banco":"237", 
+		"boleto.conta.agencia":"1234-5" ,
+		"boleto.conta.numero":"123456-0" ,
+		"boleto.conta.carteira":"12" ,
+		"boleto.beneficiario.nome":"DevAware Solutions" ,
+		"boleto.beneficiario.cprf":"15.719.277/0001-46" ,
+		"boleto.beneficiario.endereco.cep":"59020-000" ,
+		"boleto.beneficiario.endereco.uf":"RN" ,
+		"boleto.beneficiario.endereco.localidade":"Natal" ,
+		"boleto.beneficiario.endereco.bairro":"Petrópolis",
+		"boleto.beneficiario.endereco.logradouro":"Avenida Hermes da Fonseca" ,
+		"boleto.beneficiario.endereco.numero":"384",
+		"boleto.beneficiario.endereco.complemento":"Sala 2A, segundo andar" ,
+		"boleto.emissao":"2014-07-11" ,
+		"boleto.vencimento":"2020-11-07" ,
+		"boleto.documento":"EX1" ,
+		"boleto.numero":"12345678901-P" ,
+		"boleto.titulo":"DM" ,
+		"boleto.valor":"50.00" ,
+		"boleto.pagador.nome":"Alberto Santos Dumont" ,
+		"boleto.pagador.cprf":"111.111.111-11" ,
+		"boleto.pagador.endereco.cep":"36240-000" ,
+		"boleto.pagador.endereco.uf":"MG" ,
+		"boleto.pagador.endereco.localidade":"Santos Dumont", 
+		"boleto.pagador.endereco.bairro":"Casa Natal" ,
+		"boleto.pagador.endereco.logradouro":"BR-499" ,
+		"boleto.pagador.endereco.numero":"s/n" ,
+		"boleto.pagador.endereco.complemento":"Sítio - Subindo a serra da Mantiqueira" ,
+		"boleto.instrucao":"Atenção! NÃO RECEBER ESTE BOLETO." ,
+		"boleto.instrucao":"Este é apenas um teste utilizando a API Boleto Cloud" ,
+		"boleto.instrucao":"Mais info em http://boleto.cloud/app/dev/api" 
+};
+//Encripitação do AuthToken por meio da Base64  => zoho.encryption.base64Encode("api-key_...":token);
+response = zoho.encryption.base64Encode("api-key_RS1QuD46wY0HCdjv0ULobglUaQm-b7hv2pUOW6Xili0=:token");
+
+//paramentrização do authtoken para envio por meio da invoke url
+head = {"Authorization": "Basic " + response };
+//params = params.toString();
+
+//Enviando metodo post da api
+response = invokeurl
+[
+	url: url
+	type: POST
+	headers: head
+	parameters: params
+	
+];
+//obtendo dados de erro ou confirmação
+info response;
